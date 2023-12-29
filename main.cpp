@@ -1,5 +1,6 @@
 #include "chip8.h"
 #include <SDL2/SDL.h>
+#include <SFML/Graphics.hpp>
 #include <array>
 #include <cstdint>
 #include <iostream>
@@ -18,43 +19,20 @@ int main() {
   std::uint8_t delay_timer{}; // decremented at 60hz until 0
   std::uint8_t sound_timer{}; // like delay timer, beeps if it's not 0
 
-  // The window we'll be rendering to
-  SDL_Window *window = NULL;
+  sf::RenderWindow window(sf::VideoMode(200, 200), "SFML works!");
+  sf::CircleShape shape(100.f);
+  shape.setFillColor(sf::Color::Green);
 
-  // The surface contained by the window
-  SDL_Surface *screenSurface = NULL;
-
-  // Initialize SDL
-  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-    printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-  } else {
-    // Create window
-    window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED,
-                              SDL_WINDOWPOS_UNDEFINED, chip8::display_width,
-                              chip8::display_height, SDL_WINDOW_SHOWN);
-    if (window == NULL) {
-      printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
-    } else {
-      // Get window surface
-      screenSurface = SDL_GetWindowSurface(window);
-
-      // Fill the surface white
-      SDL_FillRect(screenSurface, NULL,
-                   SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF));
-
-      // Update the surface
-      SDL_UpdateWindowSurface(window);
-
-      // Hack to get window to stay up
-      SDL_Event e;
-      bool quit = false;
-      while (quit == false) {
-        while (SDL_PollEvent(&e)) {
-          if (e.type == SDL_QUIT)
-            quit = true;
-        }
-      }
+  while (window.isOpen()) {
+    sf::Event event;
+    while (window.pollEvent(event)) {
+      if (event.type == sf::Event::Closed)
+        window.close();
     }
+
+    window.clear();
+    window.draw(shape);
+    window.display();
   }
 
   // while (true) {
