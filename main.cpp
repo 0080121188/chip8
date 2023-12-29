@@ -6,29 +6,6 @@
 #include <vector>
 
 int main() {
-  enum class registers {
-    V0,
-    V1,
-    V2,
-    V3,
-    V4,
-    V5,
-    V6,
-    V7,
-    V8,
-    V9,
-    VA,
-    VB,
-    VC,
-    VD,
-    VE,
-    VF, // flag register
-  };
-
-  enum class display {
-    black,
-    white,
-  };
 
   std::array<std::uint8_t, chip8::memory_capacity> memory{};
   std::vector<std::uint16_t>
