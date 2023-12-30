@@ -39,19 +39,17 @@ enum class display {
 class Chip8 {
 private:
   std::array<std::uint8_t, hardware::memory_capacity> memory{};
-  std::vector<std::uint16_t>
-      stack{}; // original chip8 has limited space - 16 two-byte entries
-
   std::array<std::uint8_t, hardware::register_amount> general_registers{};
-  std::uint8_t program_counter{};
-  std::uint16_t index_register{}; // used to point at locations in memory
-
   std::array<std::array<bool, hardware::display_height>,
              hardware::display_width>
       display{};
 
-  std::uint8_t delay_timer{}; // decremented at 60hz until 0
-  std::uint8_t sound_timer{}; // like delay timer, beeps if it's not 0
+  std::vector<std::uint16_t> stack{}; // original chip8 has 16 two-byte entries
+
+  std::uint8_t program_counter{};
+  std::uint16_t index_register{}; // used to point at locations in memory
+  std::uint8_t delay_timer{};     // decremented at 60hz until 0
+  std::uint8_t sound_timer{};     // like delay timer, beeps if it's not 0
 
 public:
 };
