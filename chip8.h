@@ -20,8 +20,8 @@ enum class registers {
   VC,
   VD,
   VE,
-  VF, // flag register
-  MAX_REGISTERS,
+  VF,            // flag register
+  MAX_REGISTERS, // 16
 };
 
 enum class display {
@@ -31,7 +31,6 @@ enum class display {
 
 namespace hardware {
 inline constexpr int memory_capacity{4096};
-inline constexpr int register_amount{16};
 inline constexpr int display_width{64};
 inline constexpr int display_height{32};
 } // namespace hardware
@@ -39,13 +38,12 @@ inline constexpr int display_height{32};
 class Chip8 {
 private:
   std::array<std::uint8_t, hardware::memory_capacity> memory{};
-  std::array<std::uint8_t, hardware::register_amount> general_registers{};
+  std::array<std::uint8_t, static_cast<int>(registers::MAX_REGISTERS)>
+      general_registers{};
   std::array<std::array<bool, hardware::display_height>,
              hardware::display_width>
       display{};
-
   std::vector<std::uint16_t> stack{}; // original chip8 has 16 two-byte entries
-
   std::uint8_t program_counter{};
   std::uint16_t index_register{}; // used to point at locations in memory
   std::uint8_t delay_timer{};     // decremented at 60hz until 0
