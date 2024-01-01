@@ -4,12 +4,6 @@
 #include <cstdint>
 #include <vector>
 
-namespace hardware {
-inline constexpr int memory_capacity{4096};
-inline constexpr int register_amount{16};
-inline constexpr int display_width{64};
-inline constexpr int display_height{32};
-
 enum class registers {
   V0,
   V1,
@@ -34,6 +28,12 @@ enum class display {
   black,
   white,
 };
+
+namespace hardware {
+inline constexpr int memory_capacity{4096};
+inline constexpr int register_amount{16};
+inline constexpr int display_width{64};
+inline constexpr int display_height{32};
 } // namespace hardware
 
 class Chip8 {
