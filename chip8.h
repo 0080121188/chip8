@@ -37,17 +37,19 @@ inline constexpr int display_height{32};
 
 class Chip8 {
 private:
-  std::array<std::uint8_t, hardware::memory_capacity> memory{};
-  std::array<std::uint8_t, static_cast<int>(registers::MAX_REGISTERS)>
-      general_registers{};
-  std::array<std::array<bool, hardware::display_height>,
-             hardware::display_width>
-      display{};
+  std::vector<std::uint8_t> memory;
+  std::vector<std::uint8_t> general_registers;
+  std::vector<std::vector<bool>> display;
   std::vector<std::uint16_t> stack{}; // original chip8 has 16 two-byte entries
-  std::uint8_t program_counter{};
+  std::uint16_t stack_pointer{};
+  std::uint16_t program_counter{};
   std::uint16_t index_register{}; // used to point at locations in memory
   std::uint8_t delay_timer{};     // decremented at 60hz until 0
   std::uint8_t sound_timer{};     // like delay timer, beeps if it's not 0
+  std::uint16_t opcode{};
 
 public:
+  Chip8();
+
+  void emulateCycle();
 };
