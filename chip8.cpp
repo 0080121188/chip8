@@ -10,9 +10,9 @@ Chip8::Chip8()
       general_registers(static_cast<int>(registers::MAX_REGISTERS)),
       display(hardware::display_width,
               std::vector<bool>(hardware::display_height, 0)) {
-  // for(int i = 0; i<0x50; ++i){
-  // memory[i+0x50] = fontset[i];
-  // }
+  for (int i = 0; i < hardware::font_capacity; ++i) {
+    memory[i + hardware::memory_font_offset] = hardware::fontset[i];
+  }
 }
 
 void Chip8::emulateCycle() {
