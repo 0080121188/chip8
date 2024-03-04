@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 
+// this enum class might be useless
 enum class registers {
   V0,
   V1,
@@ -19,8 +20,8 @@ enum class registers {
   VB,
   VC,
   VD,
-  IR,
-  IS,            // flag register
+  VE,
+  VF,            // flag register
   MAX_REGISTERS, // 16
 };
 
@@ -60,10 +61,10 @@ inline constexpr std::array<std::uint8_t, font_capacity> fontset{
 
 class Chip8 {
 private:
-  std::vector<std::vector<bool>> display;
+  std::vector<std::vector<bool>> display; // 64x32
   std::vector<std::uint16_t> stack{}; // original chip8 has 16 two-byte entries
-  std::vector<std::uint8_t> memory;
-  std::vector<std::uint8_t> general_registers;
+  std::vector<std::uint8_t> memory;   // 4096 bytes
+  std::vector<std::uint8_t> general_registers; // 16 general registers
   std::uint16_t opcode{};
   std::uint16_t stack_pointer{};
   std::uint16_t program_counter{};
