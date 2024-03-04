@@ -2,12 +2,9 @@
 #include <iostream>
 #include <vector>
 
-// the system expects the program to be loaded at 0x200
-// the fontset should be loaded in memory at 0x50 and onwards
-// the rest is clearing the memory and the registers
 Chip8::Chip8()
-    : program_counter{0x200}, opcode{0}, index_register{0}, stack_pointer{0},
-      memory(hardware::memory_capacity, 0),
+    : program_counter{hardware::memory_program_start}, opcode{0},
+      index_register{0}, stack_pointer{0}, memory(hardware::memory_capacity, 0),
       general_registers(static_cast<int>(registers::MAX_REGISTERS), 0),
       display(hardware::display_width,
               std::vector<bool>(hardware::display_height, 0)) {
@@ -29,7 +26,7 @@ void Chip8::emulateCycle() {
     case 0x000E: // TODO 0x00EE returns from subroutine
       break;
     }
-  case 0x1000: // 0x1NNN - jump
+  case 0x1000: // TODO 0x1NNN - jump
     break;
   case 0x6000: // 0x6XNN - set register VX to NN
     general_registers[opcode & 0x0F00] = opcode & 0x00FF;
