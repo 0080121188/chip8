@@ -22,6 +22,9 @@ void Chip8::emulateCycle() {
                // first 4 bits
     switch (opcode & 0x000F) {
     case 0x0000: // TODO 0x00E0 clears the screen
+      for (int i = 0; i < hardware::display_width; ++i)
+        for (int j = 0; j < hardware::display_height; ++j)
+          display[i][j] = 0;
       break;
     case 0x000E: // TODO 0x00EE returns from subroutine
       break;
@@ -33,7 +36,19 @@ void Chip8::emulateCycle() {
     break;
   case 0x7000: // 0x7XNN - add NN to register VX
     general_registers[opcode & 0x0F00] += opcode & 0x00FF;
+  case 0xD000: // 0xDXYN - draw
+  // draw
   default:
     std::cout << "Wrong opcode: " << opcode << '\n';
+  }
+
+  if (delay_timer > 0)
+    --delay_timer;
+
+  if (sound_timer > 0) {
+    if (sound_timer == 1) {
+      std::cout << "beep\n";
+    }
+    --sound_timer;
   }
 }
