@@ -4,33 +4,13 @@
 #include <cstdint>
 #include <vector>
 
-// this enum class might be useless
-enum class registers {
-  V0,
-  V1,
-  V2,
-  V3,
-  V4,
-  V5,
-  V6,
-  V7,
-  V8,
-  V9,
-  VA,
-  VB,
-  VC,
-  VD,
-  VE,
-  VF,            // flag register
-  MAX_REGISTERS, // 16
-};
-
 enum class display {
   black,
   white,
 };
 
 namespace hardware {
+inline constexpr int max_registers{16};
 inline constexpr int memory_capacity{4096};
 inline constexpr int memory_program_start{
     0x200}; // the program should start at 0x200 in memory
@@ -62,9 +42,9 @@ inline constexpr std::array<std::uint8_t, font_capacity> fontset{
 class Chip8 {
 private:
   std::vector<std::vector<bool>> display; // 64x32
-  std::vector<std::uint16_t> stack{}; // original chip8 has 16 two-byte entries
-  std::vector<std::uint8_t> memory;   // 4096 bytes
-  std::vector<std::uint8_t> general_registers; // 16 general registers
+  std::vector<std::uint16_t> stack{};  // original chip8 has 16 two-byte entries
+  std::vector<std::uint8_t> memory;    // 4096 bytes
+  std::vector<std::uint8_t> registers; // 16 general registers
   std::uint16_t opcode{};
   std::uint16_t stack_pointer{};
   std::uint16_t program_counter{};

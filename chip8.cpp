@@ -5,7 +5,7 @@
 Chip8::Chip8()
     : program_counter{hardware::memory_program_start}, opcode{0},
       index_register{0}, stack_pointer{0}, memory(hardware::memory_capacity, 0),
-      general_registers(static_cast<int>(registers::MAX_REGISTERS), 0),
+      registers(hardware::max_registers, 0),
       display(hardware::display_width,
               std::vector<bool>(hardware::display_height, 0)) {
   for (int i = 0; i < hardware::font_capacity; ++i) {
@@ -29,15 +29,28 @@ void Chip8::emulateCycle() {
     case 0x000E: // TODO 0x00EE returns from subroutine
       break;
     }
+    break;
   case 0x1000: // TODO 0x1NNN - jump
     break;
   case 0x6000: // 0x6XNN - set register VX to NN
-    general_registers[opcode & 0x0F00] = opcode & 0x00FF;
+    registers[opcode & 0x0F00] = opcode & 0x00FF;
     break;
   case 0x7000: // 0x7XNN - add NN to register VX
-    general_registers[opcode & 0x0F00] += opcode & 0x00FF;
-  case 0xD000: // 0xDXYN - draw
-  // draw
+    registers[opcode & 0x0F00] += opcode & 0x00FF;
+    break;
+  case 0xD000: // 0xDXYN - draw a sprite at (VX, VY) that's 8 pixes wide and N
+               // pixels high
+  {
+    // modulo because the starting position of the sprite should wrap
+    int x{registers[((opcode & 0x0F00) >> 8) % hardware::display_width]};
+    int y{registers[((opcode & 0x00F0) >> 4) % hardware::display_height]};
+    int height{(opcode & 0x000F)};
+    constexpr int width{8};
+
+    registers[0xF] = 0;
+
+    break;
+  }
   default:
     std::cout << "Wrong opcode: " << opcode << '\n';
   }
