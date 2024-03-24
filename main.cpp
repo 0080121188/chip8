@@ -1,42 +1,44 @@
 #include "chip8.h"
 #include <SFML/Graphics.hpp>
-#include <SFML/Graphics/Color.hpp>
-#include <SFML/System/Vector2.hpp>
 
 int main() {
-  Chip8 chip8{};
+    Chip8 chip8;
 
-  sf::RenderWindow window(
-      sf::VideoMode(hardware::display_width, hardware::display_height),
-      "chip8");
+    sf::RenderWindow window(
+        sf::VideoMode(hardware::display_width * hardware::pixel_size, 
+                      hardware::display_height * hardware::pixel_size),
+        "Chip-8 Emulator");
 
-  window.clear(sf::Color::Black);
-  // sf::CircleShape shape(100.f);
-  // shape.setFillColor(sf::Color::Green);
+    // Create texture and sprite to represent pixels
+    sf::Texture texture;
+    texture.create(hardware::display_width, hardware::display_height);
+    sf::Sprite sprite(texture);
 
-  // Create an image
-  sf::Image image;
-  image.create(1, 1, sf::Color::White); // Create a 1x1 image with a white pixel
+    // Get reference to display data
+    auto& display = chip8.getDisplay();
 
-  // Create a texture from the image
-  sf::Texture texture;
-  texture.loadFromImage(image);
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
 
-  // Create a sprite to draw the texture
-  sf::Sprite sprite(texture);
-  sprite.setPosition(10, 10);
+        // Update Chip8 emulation
+        chip8.emulateCycle();
 
-  while (window.isOpen()) {
-    sf::Event event;
-    while (window.pollEvent(event)) {
-      if (event.type == sf::Event::Closed)
-        window.close();
+        // Update texture directly from display data
+        texture.update((const sf::Uint8*)display.data());
+
+        // Clear the window
+        window.clear();
+
+        // Draw the sprite
+        window.draw(sprite);
+
+        // Display
+        window.display();
     }
 
-    window.clear();
-    window.draw(sprite);
-    window.display();
-  }
-
-  return 0;
+    return 0;
 }

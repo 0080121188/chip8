@@ -16,6 +16,7 @@ inline constexpr int memory_program_start{
     0x200}; // the program should start at 0x200 in memory
 inline constexpr int display_width{64};
 inline constexpr int display_height{32};
+inline constexpr int pixel_size{1};
 inline constexpr int memory_font_offset{
     0x50}; // the fonts should start at 0x50 in memory
 inline constexpr int font_capacity{80}; // how much space the fontset takes up
@@ -51,8 +52,11 @@ private:
   std::uint16_t index_register{}; // used to point at locations in memory
   std::uint8_t delay_timer{};     // decremented at 60hz until 0
   std::uint8_t sound_timer{};     // like delay timer, beeps if it's not 0
+  bool draw_flag{};
 
 public:
   Chip8();
   void emulateCycle();
+  bool getDrawFlag();
+  const std::vector<std::vector<bool>> &getDisplay() const;
 };
