@@ -39,24 +39,3 @@ inline constexpr std::array<std::uint8_t, font_capacity> fontset{
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 } // namespace hardware
-
-class Chip8 {
-private:
-  std::vector<std::vector<bool>> display; // 64x32
-  std::vector<std::uint16_t> stack{};  // original chip8 has 16 two-byte entries
-  std::vector<std::uint8_t> memory;    // 4096 bytes
-  std::vector<std::uint8_t> registers; // 16 general registers
-  std::uint16_t opcode{};
-  std::uint16_t stack_pointer{};
-  std::uint16_t program_counter{};
-  std::uint16_t index_register{}; // used to point at locations in memory
-  std::uint8_t delay_timer{};     // decremented at 60hz until 0
-  std::uint8_t sound_timer{};     // like delay timer, beeps if it's not 0
-  bool draw_flag{};
-
-public:
-  Chip8();
-  void emulateCycle();
-  bool getDrawFlag();
-  const std::vector<std::vector<bool>> &getDisplay() const;
-};
