@@ -39,14 +39,7 @@ int main(int argc, char *argv[]) {
     }
 
     sf::RenderWindow window(sf::VideoMode(hardware::display_width * hardware::pixel_size, hardware::display_height * hardware::pixel_size), "chip8");
-
-    // Create texture and sprite to represent pixels
-    sf::Texture texture;
-    texture.create(hardware::display_width, hardware::display_height);
-    sf::Sprite sprite(texture);
-
-    // Get reference to display data
-    // auto &display = chip8.getDisplay();
+    window.setFramerateLimit(1);
 
     while (window.isOpen()) {
       sf::Event event;
@@ -55,7 +48,6 @@ int main(int argc, char *argv[]) {
           window.close();
       }
 
-      // Update Chip8 emulation
       opcode = memory[program_counter] << 8 | memory[program_counter + 1]; // merge both bytes into opcode
 
       switch (opcode & 0xF000) { // reading the first 4 bits
@@ -121,19 +113,27 @@ int main(int argc, char *argv[]) {
 
       program_counter += 2;
 
-      // Update texture directly from display data
-      texture.update((const sf::Uint8 *)display.data());
+      testDisplay(display);
 
-      // Clear the window
       window.clear();
 
-      // Draw the sprite
-      window.draw(sprite);
+      for (size_t y = 0; y < display.size(); ++y) {
+        for (size_t x = 0; x < display[y].size(); ++x) {
+          if (display[y][x]) {
+            // Create a rectangle shape for each pixel
+            sf::RectangleShape pixel(sf::Vector2f(hardware::pixel_size, hardware::pixel_size));
+            // Set position and color
+            pixel.setPosition(x * hardware::pixel_size, y * hardware::pixel_size);
+            pixel.setFillColor(sf::Color::Black);
+            // Draw the pixel
+            window.draw(pixel);
+          }
+        }
+      }
 
-      // Display
       window.display();
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(hardware::loop_speed));
+      window.setFramerateLimit(60);
     }
 
   } catch (const std::invalid_argument &e) {
