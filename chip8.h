@@ -39,4 +39,6 @@ inline constexpr std::array<std::uint8_t, font_capacity> fontset{
 };
 } // namespace hardware
 
+void testOpcode(const std::uint16_t &opcode);
+void testMemory(const std::vector<std::uint8_t> &memory);
 void testDisplay(const std::vector<std::vector<bool>> &vec);
