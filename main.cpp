@@ -20,17 +20,24 @@ int main(int argc, char *argv[]) {
     std::streampos rom_size = rom.tellg();
     rom.seekg(0, std::ios::beg);
 
-    std::vector<std::uint8_t> memory(hardware::memory_capacity, 0); // 4096 bytes
+    std::vector<std::uint8_t> memory(hardware::memory_capacity,
+                                     0); // 4096 bytes
 
     for (int i = 0; i < hardware::font_capacity; ++i) {
       memory[i + hardware::memory_font_offset] = hardware::fontset[i];
     }
 
-    rom.read(reinterpret_cast<char *>(memory.data() + hardware::memory_program_start), rom_size);
+    rom.read(reinterpret_cast<char *>(memory.data() +
+                                      hardware::memory_program_start),
+             rom_size);
 
-    std::vector<std::vector<bool>> display(hardware::display_width, std::vector<bool>(hardware::display_height, 0)); // 64x32
-    std::vector<std::uint16_t> stack(2, 0);                                                                          // original chip8 has 16 two-byte entries
-    std::vector<std::uint8_t> registers(hardware::max_registers, 0);                                                 // 16 general registers
+    std::vector<std::vector<bool>> display(
+        hardware::display_width,
+        std::vector<bool>(hardware::display_height, 0)); // 64x32
+    std::vector<std::uint16_t> stack(
+        2, 0); // original chip8 has 16 two-byte entries
+    std::vector<std::uint8_t> registers(hardware::max_registers,
+                                        0); // 16 general registers
     std::uint16_t opcode{0};
     std::uint16_t stack_pointer{0};
     std::uint16_t program_counter{hardware::memory_program_start};
@@ -38,9 +45,13 @@ int main(int argc, char *argv[]) {
     std::uint8_t delay_timer{};      // decremented at 60hz until 0
     std::uint8_t sound_timer{};      // like delay timer, beeps if it's not 0
 
-    sf::RenderWindow window(sf::VideoMode(hardware::display_width * hardware::pixel_size, hardware::display_height * hardware::pixel_size), "chip8");
+    sf::RenderWindow window(
+        sf::VideoMode(hardware::display_width * hardware::pixel_size,
+                      hardware::display_height * hardware::pixel_size),
+        "chip8");
     window.setFramerateLimit(10);
-    sf::RectangleShape pixel(sf::Vector2f(hardware::pixel_size, hardware::pixel_size));
+    sf::RectangleShape pixel(
+        sf::Vector2f(hardware::pixel_size, hardware::pixel_size));
 
     while (window.isOpen()) {
       sf::Event event;
@@ -49,12 +60,15 @@ int main(int argc, char *argv[]) {
           window.close();
       }
 
-      opcode = memory[program_counter] << 8 | memory[program_counter + 1]; // merge both bytes into opcode
+      opcode = memory[program_counter] << 8 |
+               memory[program_counter + 1]; // merge both bytes into opcode
 
-      std::cout << "Opcode: " << std::hex << std::setw(4) << std::setfill('0') << opcode << '\n';
+      std::cout << "Opcode: " << std::hex << std::setw(4) << std::setfill('0')
+                << opcode << '\n';
 
       switch (opcode & 0xF000) { // reading the first 4 bits
-      case 0x0000:               // 0x00E0 and 0x00EE both start with 0x0, so can't rely on the first 4 bits
+      case 0x0000: // 0x00E0 and 0x00EE both start with 0x0, so can't rely on
+                   // the first 4 bits
         switch (opcode & 0x000F) {
         case 0x0000: // 0x00E0 clears the screen
           for (int x = 0; x < hardware::display_width; ++x)
@@ -77,7 +91,8 @@ int main(int argc, char *argv[]) {
       case 0xA000: // 0xANNN - set the index register to NNN
         index_register = (opcode & 0x0FFF);
         break;
-      case 0xD000: // 0xDXYN - draw a sprite at (VX, VY) that's 8 pixes wide and N pixels high
+      case 0xD000: // 0xDXYN - draw a sprite at (VX, VY) that's 8 pixes wide and
+                   // N pixels high
       {
         // modulo because the starting position of the sprite should wrap
         int x{registers[(opcode & 0x0F00) >> 8]};
@@ -93,13 +108,15 @@ int main(int argc, char *argv[]) {
             if ((pixel & (0x80 >> xline)) != 0) {
               if (display[x + xline][y + yline] == true)
                 registers[0xF] = 1;
-              display[x + xline][y + yline] = (display[x + xline][y + yline] != true);
+              display[x + xline][y + yline] =
+                  (display[x + xline][y + yline] != true);
             }
           }
         }
       } break;
       default:
-        std::cout << "Wrong opcode: " << std::hex << std::setw(4) << std::setfill('0') << opcode << '\n';
+        std::cout << "Wrong opcode: " << std::hex << std::setw(4)
+                  << std::setfill('0') << opcode << '\n';
       }
 
       if (delay_timer > 0)
@@ -122,7 +139,8 @@ int main(int argc, char *argv[]) {
         for (size_t y = 0; y < display[y].size(); ++y) {
           if (display[x][y]) {
             // Create a rectangle shape for each pixel
-            pixel.setPosition(x * hardware::pixel_size, y * hardware::pixel_size);
+            pixel.setPosition(x * hardware::pixel_size,
+                              y * hardware::pixel_size);
             pixel.setFillColor(sf::Color::White);
             window.draw(pixel);
           }
