@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
           break;
         case 0x000E: // TODO 0x00EE returns from subroutine
           break;
+          // there's also 0NNN which doesn't get used
         }
         break;
       case 0x1000: // 0x1NNN - jump
@@ -88,6 +89,11 @@ int main(int argc, char *argv[]) {
       case 0x7000: // 0x7XNN - add NN to register VX
         registers[(opcode & 0x0F00) >> 8] += (opcode & 0x00FF);
         break;
+      case 0x8000:
+        switch (opcode & 0x000F) {
+        case 0x0000: // 0x8XY0 - set regsiter VX to VY
+          registers[(opcode & 0x0F00) >> 8] = registers[(opcode & 0x00F0) >> 4];
+        }
       case 0xA000: // 0xANNN - set the index register to NNN
         index_register = (opcode & 0x0FFF);
         break;
