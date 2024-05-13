@@ -3,9 +3,17 @@
 #include <iostream>
 #include <vector>
 
+bool isOverflow(int x, int y) {
+  int sum = x + y;
+  int neg_over = x < 0 && y < 0 && sum >= 0;
+  int pos_over = x >= 0 && y >= 0 && sum < 0;
+  return neg_over || pos_over;
+}
+
 void testMemory(const std::vector<std::uint8_t> &memory) {
   for (auto &a : memory) {
-    std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(a) << ' ';
+    std::cout << std::hex << std::setw(2) << std::setfill('0')
+              << static_cast<int>(a) << ' ';
   }
 
   std::cout << '\n';

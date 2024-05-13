@@ -67,8 +67,7 @@ int main(int argc, char *argv[]) {
                 << opcode << '\n';
 
       switch (opcode & 0xF000) { // reading the first 4 bits
-      case 0x0000: // 0x00E0 and 0x00EE both start with 0x0, so can't rely on
-                   // the first 4 bits
+      case 0x0000:
         switch (opcode & 0x000F) {
         case 0x0000: // 0x00E0 clears the screen
           for (int x = 0; x < hardware::display_width; ++x)
@@ -97,6 +96,23 @@ int main(int argc, char *argv[]) {
         case 0x0001: // 0x8XY1 - VX = VX OR VY
           registers[(opcode & 0x0F00) >> 8] =
               registers[(opcode & 0x0F00) >> 8] |
+              registers[(opcode & 0x00F0) >> 4];
+          break;
+        case 0x0002: // 0x8XY2 - VX = VX AND VY
+          registers[(opcode & 0x0F00) >> 8] =
+              registers[(opcode & 0x0F00) >> 8] &
+              registers[(opcode & 0x00F0) >> 4];
+          break;
+        case 0x0003: // 0x8XY3 - VX = VX XOR VY
+          registers[(opcode & 0x0F00) >> 8] =
+              registers[(opcode & 0x0F00) >> 8] ^
+              registers[(opcode & 0x00F0) >> 4];
+          break;
+        case 0x0004: // 0x8XY4 - VX = VX + VY
+          if (isOverflow(registers[(opcode & 0x0F00) >> 8],
+                         registers[(opcode & 0x00F0) >> 4]))
+            registers[0xF] = 1;
+          registers[(opcode & 0x0F00) >> 8] +=
               registers[(opcode & 0x00F0) >> 4];
           break;
         }
