@@ -1,9 +1,11 @@
 #include "chip8.h"
 #include <SFML/Graphics.hpp>
+#include <cstdint>
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <random>
 
 int main(int argc, char *argv[]) {
 
@@ -119,8 +121,14 @@ int main(int argc, char *argv[]) {
       case 0xA000: // 0xANNN - set the index register to NNN
         index_register = (opcode & 0x0FFF);
         break;
-      case 0xB000: // jump to NNN + V0
+      case 0xB000: // 0xBNNN - jump to NNN + V0
         program_counter = (opcode & 0x0FFF) + registers[0];
+        break;
+      case 0xC000: // 0xCXNN - generate a random number and AND it with NN - put
+                   // it in VX
+        static std::mt19937 mt{std::random_device{}()};
+        static std::uniform_int_distribution generator{INT8_MIN, INT8_MAX};
+        registers[(opcode & 0x0F00) >> 8] = (generator(mt) & (opcode & 0x00FF));
         break;
       case 0xD000: // 0xDXYN - draw a sprite at (VX, VY) that's 8 pixes wide and
                    // N pixels high
