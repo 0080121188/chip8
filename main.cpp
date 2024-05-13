@@ -119,6 +119,9 @@ int main(int argc, char *argv[]) {
       case 0xA000: // 0xANNN - set the index register to NNN
         index_register = (opcode & 0x0FFF);
         break;
+      case 0xB000: // jump to NNN + V0
+        program_counter = (opcode & 0x0FFF) + registers[0];
+        break;
       case 0xD000: // 0xDXYN - draw a sprite at (VX, VY) that's 8 pixes wide and
                    // N pixels high
       {
