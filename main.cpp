@@ -93,6 +93,12 @@ int main(int argc, char *argv[]) {
         switch (opcode & 0x000F) {
         case 0x0000: // 0x8XY0 - set regsiter VX to VY
           registers[(opcode & 0x0F00) >> 8] = registers[(opcode & 0x00F0) >> 4];
+          break;
+        case 0x0001: // 0x8XY1 - VX = VX OR VY
+          registers[(opcode & 0x0F00) >> 8] =
+              registers[(opcode & 0x0F00) >> 8] |
+              registers[(opcode & 0x00F0) >> 4];
+          break;
         }
       case 0xA000: // 0xANNN - set the index register to NNN
         index_register = (opcode & 0x0FFF);
