@@ -168,6 +168,13 @@ int main(int argc, char *argv[]) {
         case 0x0008: // 0xFX18 - set the sound timer to the value in VX
           sound_timer = registers[(opcode & 0x0F00) >> 8];
           break;
+        case 0x000E: // 0xFX1E - add the value in VX to the index register
+          index_register += registers[(opcode & 0x0F00) >> 8];
+          // overflows outside of the normal addressing range (if it overflows
+          // from 0FFF to above 1000)
+          if ((index_register & 0xF000) != 0x0000)
+            registers[0xF] = 1;
+          break;
         }
       default:
         std::cout << "Wrong opcode: " << std::hex << std::setw(4)
@@ -191,7 +198,6 @@ int main(int argc, char *argv[]) {
       for (size_t x = 0; x < display.size(); ++x) {
         for (size_t y = 0; y < display[y].size(); ++y) {
           if (display[x][y]) {
-            // Create a rectangle shape for each pixel
             pixel.setPosition(x * hardware::pixel_size,
                               y * hardware::pixel_size);
             pixel.setFillColor(sf::Color::White);
