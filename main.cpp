@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
                                      0); // 4096 bytes
 
     for (int i = 0; i < hardware::font_capacity; ++i) {
-      memory[i + hardware::memory_font_offset] = hardware::fontset[i];
+      memory[i] = hardware::fontset[i];
     }
 
     rom.read(reinterpret_cast<char *>(memory.data() +
@@ -118,6 +118,7 @@ int main(int argc, char *argv[]) {
               registers[(opcode & 0x00F0) >> 4];
           break;
         }
+        break;
       case 0xA000: // 0xANNN - set the index register to NNN
         index_register = (opcode & 0x0FFF);
         break;
@@ -153,6 +154,21 @@ int main(int argc, char *argv[]) {
           }
         }
       } break;
+      case 0xF000:
+        switch (opcode & 0x000F) {
+        case 0x0005:
+          switch (opcode & 0x00F0) {
+          case 0x0010: // 0xFX15 - set the delay timer to the value in VX
+            delay_timer = registers[(opcode & 0x0F00) >> 8];
+            break;
+          }
+        case 0x0007: // 0xFX07 - set register VX to delay timer
+          registers[(opcode & 0x0F00) >> 8] = delay_timer;
+          break;
+        case 0x0008: // 0xFX18 - set the sound timer to the value in VX
+          sound_timer = registers[(opcode & 0x0F00) >> 8];
+          break;
+        }
       default:
         std::cout << "Wrong opcode: " << std::hex << std::setw(4)
                   << std::setfill('0') << opcode << '\n';
@@ -169,8 +185,6 @@ int main(int argc, char *argv[]) {
       }
 
       program_counter += 2;
-
-      // testDisplay(display);
 
       window.clear();
 

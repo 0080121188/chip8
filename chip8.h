@@ -17,8 +17,6 @@ inline constexpr int memory_program_start{
     0x200}; // the program should start at 0x200 in memory
 inline constexpr int display_width{64};
 inline constexpr int display_height{32};
-inline constexpr int memory_font_offset{
-    0x50}; // the fonts should start at 0x50 in memory
 inline constexpr int font_capacity{80}; // how much space the fontset takes up
 inline constexpr float pixel_size{10.0f};
 inline constexpr std::array<std::uint8_t, font_capacity> fontset{
