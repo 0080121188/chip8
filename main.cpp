@@ -118,10 +118,16 @@ int main(int argc, char *argv[]) {
               registers[(opcode & 0x00F0) >> 4];
           break;
         case 0x0005: // 0x8XY5 - VX = VX - VY
+          if (isOverflow(registers[(opcode & 0x0F00) >> 8],
+                         registers[(opcode & 0x00F0) >> 4]))
+            registers[0xF] = 1;
           registers[(opcode & 0x0F00) >> 8] -=
-              registers[(opcode & 0x00D0) >> 4];
+              registers[(opcode & 0x00F0) >> 4];
           break;
         case 0x0007: // 0x8XY7 - VX = VY - VX
+          if (isOverflow(registers[(opcode & 0x0F00) >> 8],
+                         registers[(opcode & 0x00F0) >> 4]))
+            registers[0xF] = 1;
           registers[(opcode & 0x0F00) >> 8] =
               registers[(opcode & 0x00F0) >> 4] -
               registers[(opcode & 0x0F00) >> 8];
