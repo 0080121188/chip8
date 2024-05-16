@@ -65,6 +65,8 @@ int main(int argc, char *argv[]) {
       opcode = memory[program_counter] << 8 |
                memory[program_counter + 1]; // merge both bytes into opcode
 
+      program_counter += 2;
+
       std::cout << "Opcode: " << std::hex << std::setw(4) << std::setfill('0')
                 << opcode << '\n';
 
@@ -81,7 +83,7 @@ int main(int argc, char *argv[]) {
           // there's also 0NNN which doesn't get used
         }
         break;
-      case 0x1000: // 0x1NNN - jump
+      case 0x1000: // 0x1NNN - jump to NNN
         program_counter = (opcode & 0x0FFF);
         break;
       case 0x6000: // 0x6XNN - set register VX to NN
@@ -189,6 +191,8 @@ int main(int argc, char *argv[]) {
           // from 0FFF to above 1000)
           if ((index_register & 0xF000) != 0x0000)
             registers[0xF] = 1;
+          else
+            registers[0xF] = 0;
           break;
         }
       default:
@@ -205,8 +209,6 @@ int main(int argc, char *argv[]) {
         }
         --sound_timer;
       }
-
-      program_counter += 2;
 
       window.clear();
 
