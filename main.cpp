@@ -78,12 +78,18 @@ int main(int argc, char *argv[]) {
             for (int y = 0; y < hardware::display_height; ++y)
               display[x][y] = 0;
           break;
-        case 0x000E: // TODO 0x00EE returns from subroutine
+        case 0x000E: // 0x00EE returns from a call
+          program_counter = stack.back();
+          stack.pop_back();
           break;
           // there's also 0NNN which doesn't get used
         }
         break;
       case 0x1000: // 0x1NNN - jump to NNN
+        program_counter = (opcode & 0x0FFF);
+        break;
+      case 0x2000: // 0x2NNN - call something at NNN
+        stack.push_back(program_counter);
         program_counter = (opcode & 0x0FFF);
         break;
       case 0x6000: // 0x6XNN - set register VX to NN
