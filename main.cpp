@@ -93,6 +93,19 @@ int main(int argc, char *argv[]) {
         stack.push_back(program_counter);
         program_counter = (opcode & 0x0FFF);
         break;
+      case 0x3000: // 0x3XNN - skip one instruction if VX == NN
+        if (registers[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF))
+          program_counter += 2;
+        break;
+      case 0x4000: // 0x4XNN - skip one instruction if VX != NN
+        if (registers[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF))
+          program_counter += 2;
+        break;
+      case 0x5000: // 0x5XY0 - skip one instruction if VX == VY
+        if (registers[(opcode & 0x0F00) >> 8] ==
+            registers[(opcode & 0x00F0) >> 4])
+          program_counter += 2;
+        break;
       case 0x6000: // 0x6XNN - set register VX to NN
         registers[(opcode & 0x0F00) >> 8] = (opcode & 0x00FF);
         break;
@@ -160,6 +173,11 @@ int main(int argc, char *argv[]) {
               (registers[(opcode & 0x0F00) >> 8] << 1);
           break;
         }
+        break;
+      case 0x9000: // 0x9XY0 - skip one instruction if VX != VY
+        if (registers[(opcode & 0x0F00) >> 8] !=
+            registers[(opcode & 0x00F0) >> 4])
+          program_counter += 2;
         break;
       case 0xA000: // 0xANNN - set the index register to NNN
         index_register = (opcode & 0x0FFF);
