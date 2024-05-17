@@ -1,5 +1,6 @@
 #include "chip8.h"
 #include <SFML/Graphics.hpp>
+#include <bitset>
 #include <cstdint>
 #include <cstdlib>
 #include <fstream>
@@ -132,6 +133,15 @@ int main(int argc, char *argv[]) {
           registers[(opcode & 0x0F00) >> 8] -=
               registers[(opcode & 0x00F0) >> 4];
           break;
+        case 0x0006: // 0x8XY6 - set VX to VY and then shift it to the right
+          registers[(opcode & 0x0F00) >> 8] = registers[(opcode & 0x00F0) >> 4];
+          if (std::bitset<8>{registers[(opcode & 0x0F00) >> 8]}.test(0) == true)
+            registers[0xF] = 1;
+          else
+            registers[0xF] = 0;
+          registers[(opcode & 0x0F00) >> 8] =
+              (registers[(opcode & 0x0F00) >> 8] >> 1);
+          break;
         case 0x0007: // 0x8XY7 - VX = VY - VX
           if (isOverflow(registers[(opcode & 0x0F00) >> 8],
                          registers[(opcode & 0x00F0) >> 4]))
@@ -139,6 +149,15 @@ int main(int argc, char *argv[]) {
           registers[(opcode & 0x0F00) >> 8] =
               registers[(opcode & 0x00F0) >> 4] -
               registers[(opcode & 0x0F00) >> 8];
+          break;
+        case 0x000E: // 0x8XYE - set VX to VY and then shift it to the left
+          registers[(opcode & 0x0F00) >> 8] = registers[(opcode & 0x00F0) >> 4];
+          if (std::bitset<8>{registers[(opcode & 0x0F00) >> 8]}.test(7) == true)
+            registers[0xF] = 1;
+          else
+            registers[0xF] = 0;
+          registers[(opcode & 0x0F00) >> 8] =
+              (registers[(opcode & 0x0F00) >> 8] << 1);
           break;
         }
         break;
