@@ -1,12 +1,15 @@
 #include "chip8.h"
 #include <SFML/Graphics.hpp>
+#include <SFML/Window/Keyboard.hpp>
 #include <bitset>
 #include <cstdint>
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <random>
+#include <utility>
 
 int main(int argc, char *argv[]) {
 
@@ -47,6 +50,17 @@ int main(int argc, char *argv[]) {
     std::uint16_t index_register{0}; // used to point at locations in memory
     std::uint8_t delay_timer{};      // decremented at 60hz until 0
     std::uint8_t sound_timer{};      // like delay timer, beeps if it's not 0
+
+    // since the keypad is hexadecimal there has to be a qwerty equivalent
+    std::map<int, sf::Keyboard::Key> keyboard_map{
+        {0x1, sf::Keyboard::Num1}, {0x2, sf::Keyboard::Num2},
+        {0x3, sf::Keyboard::Num3}, {0xC, sf::Keyboard::Num4},
+        {0x4, sf::Keyboard::Q},    {0x5, sf::Keyboard::W},
+        {0x6, sf::Keyboard::E},    {0xD, sf::Keyboard::R},
+        {0x7, sf::Keyboard::A},    {0x8, sf::Keyboard::S},
+        {0x9, sf::Keyboard::D},    {0xE, sf::Keyboard::F},
+        {0xA, sf::Keyboard::Z},    {0x0, sf::Keyboard::X},
+        {0xB, sf::Keyboard::C},    {0xF, sf::Keyboard::V}};
 
     sf::RenderWindow window(
         sf::VideoMode(hardware::display_width * hardware::pixel_size,
@@ -110,6 +124,8 @@ int main(int argc, char *argv[]) {
         registers[(opcode & 0x0F00) >> 8] = (opcode & 0x00FF);
         break;
       case 0x7000: // 0x7XNN - add NN to register VX
+        if (isOverflow(registers[(opcode & 0x0F00) >> 8], opcode & 0x00FF))
+          registers[0xF] = 1;
         registers[(opcode & 0x0F00) >> 8] += (opcode & 0x00FF);
         break;
       case 0x8000:
@@ -214,21 +230,112 @@ int main(int argc, char *argv[]) {
           }
         }
       } break;
+      case 0xE000:
+        switch (opcode & 0x00F0) {
+        case 0x0090: // 0xEX9E - skip one instruction if the key corresponding
+                     // to the value in VX is pressed
+          if (sf::Keyboard::isKeyPressed(
+                  keyboard_map[registers[(opcode & 0x0F00) >> 8]]))
+            program_counter += 2;
+          break;
+        case 0x00A0: // 0xEXA1 - skip one instruction if the key corresponding
+                     // to the value in VX is NOT pressed
+        {
+          auto key = keyboard_map.find(registers[(opcode & 0x0F00) >> 8]);
+          if (!sf::Keyboard::isKeyPressed(key->second))
+            program_counter += 2;
+        } break;
+        }
       case 0xF000:
         switch (opcode & 0x000F) {
+        case 0x0003: // 0xFX33 - BCD conversion - take the number in VX (say
+                     // 127), convert it to its three digits (so 1, 2, and 7),
+                     // and store it in memory (1 at the address in the index
+                     // register, 2 at index + 1, and 8 at index + 2)
+        {
+          std::uint8_t number = registers[(opcode & 0x0F00) >> 8];
+          if (number < 100) {
+            memory[index_register] = 0;
+            ++index_register;
+            if (number < 10) {
+              memory[index_register] = 0;
+              ++index_register;
+              if (number == 0) {
+                memory[index_register] = 0;
+                ++index_register;
+              }
+            }
+          }
+          while (number > 0) {
+            memory[index_register] = number % 10;
+            ++index_register;
+            number /= 10;
+          }
+          std::swap(
+              memory[index_register],
+              memory[index_register -
+                     2]); // this is necessary because using modulo will give
+                          // the digits in different order, eg. for 156 it will
+                          // give 6, 5, and 1 instead of 1, 5, 6
+        } break;
         case 0x0005:
           switch (opcode & 0x00F0) {
           case 0x0010: // 0xFX15 - set the delay timer to the value in VX
             delay_timer = registers[(opcode & 0x0F00) >> 8];
             break;
+          case 0x0050: // 0xFX55 - store the value of each register V0 to VX
+                       // (INCLUSIVE) in successive memory addresses, starting
+                       // with the one stored in the index register (so, V0 will
+                       // be at index + 0, V1 will be at index + 1, etc.)
+          {
+            int x = (opcode & 0x0F00) >> 8;
+            for (int i = 0; i <= x; ++i) {
+              memory[index_register + i] = registers[i];
+            }
+            index_register += x + 1; // +1 is here to match the loop condition
+          } break;
+          case 0x0060: // 0xFX65 - the same as 0xFX55 but reverse
+          {
+            int x = (opcode & 0x0F00) >> 8;
+            for (int i = 0; i <= x; ++i) {
+              registers[i] = memory[index_register + i];
+            }
+            index_register += x + 1; // +1 to match the loop condition
+          } break;
           }
+          break;
         case 0x0007: // 0xFX07 - set register VX to delay timer
           registers[(opcode & 0x0F00) >> 8] = delay_timer;
           break;
         case 0x0008: // 0xFX18 - set the sound timer to the value in VX
           sound_timer = registers[(opcode & 0x0F00) >> 8];
           break;
-        case 0x000E: // 0xFX1E - add the value in VX to the index register
+        case 0x0009: // 0xFX29 - set the index register to the address of the
+                     // hex character in VX (they're stored at the beginning of
+                     // memory)
+        {
+          std::uint8_t character = registers[(opcode & 0x0F00) >> 8];
+          index_register =
+              0 + character * 5; // 0 because the characters are at the
+                                 // beginning of the memory, and 5 because each
+                                 // character takes up 5 elements of the array
+        } break;
+        case 0x000A: // 0xFX0A - waits for key input - if a key is pressed, its
+                     // hex value is put into XV
+        {
+          bool was_key_pressed = false;
+          for (const auto &key : keyboard_map) {
+            if (sf::Keyboard::isKeyPressed(key.second)) {
+              registers[(opcode & 0x0F00) >> 8] = key.first;
+              was_key_pressed = true;
+              break;
+            }
+          }
+          if (!was_key_pressed)
+            program_counter -= 2;
+        } break;
+        case 0x000E: // 0xFX1E - add the value in VX to the index
+                     // register
           index_register += registers[(opcode & 0x0F00) >> 8];
           // overflows outside of the normal addressing range (if it overflows
           // from 0FFF to above 1000)
@@ -238,6 +345,7 @@ int main(int argc, char *argv[]) {
             registers[0xF] = 0;
           break;
         }
+        break;
       default:
         std::cout << "Wrong opcode: " << std::hex << std::setw(4)
                   << std::setfill('0') << opcode << '\n';
@@ -268,7 +376,6 @@ int main(int argc, char *argv[]) {
 
       window.display();
     }
-
   } catch (const std::invalid_argument &e) {
     std::cerr << "Error: " << e.what() << '\n';
     return EXIT_FAILURE;
