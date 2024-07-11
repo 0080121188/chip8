@@ -16,10 +16,6 @@
 // TODO: change opcode to union, so that accessing the nibbles is easier to read
 // TODO: clean up the comments (sometimes they're above the code, sometimes
 // they're next to it)
-// TODO: no need to print the opcodes, could have a program argument that
-// indicates the debug mode has to be set, in which it prints out the opcodes
-// (could do it easily with a bool and constexpr if)
-// TODO: have a program argument that indicates the fps to run at
 
 int main(int argc, char *argv[]) {
 
