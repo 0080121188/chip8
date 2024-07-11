@@ -13,8 +13,6 @@
 #include <random>
 #include <utility>
 
-// TODO: change opcode to union, so that accessing the nibbles is easier to read
-// read
 // TODO: clean up the comments (sometimes they're above the code, sometimes
 // they're next to it)
 
