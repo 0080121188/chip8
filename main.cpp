@@ -18,6 +18,7 @@
 // indicates the debug mode has to be set, in which it prints out the opcodes
 // (could do it easily with a bool and constexpr if)
 // TODO: have a program argument that indicates the fps to run at
+// TODO: add beeping
 
 int main(int argc, char *argv[]) {
 
