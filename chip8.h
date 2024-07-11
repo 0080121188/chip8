@@ -10,7 +10,6 @@ enum class display {
 };
 
 namespace hardware {
-inline constexpr int fps{600};
 inline constexpr int loop_speed{100};
 inline constexpr int max_registers{16};
 inline constexpr int memory_capacity{4096};

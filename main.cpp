@@ -20,13 +20,29 @@
 // indicates the debug mode has to be set, in which it prints out the opcodes
 // (could do it easily with a bool and constexpr if)
 // TODO: have a program argument that indicates the fps to run at
-// TODO: add beeping
 
 int main(int argc, char *argv[]) {
 
   try {
     if (argc < 2)
       throw std::invalid_argument("No game loaded");
+
+    int fps{600};
+    bool debug_mode{false};
+
+    for (int i = 2; i < argc; i++) {
+      std::string arg = argv[i];
+      if (arg == "-d") {
+        debug_mode = true;
+      } else if (arg == "-fps" && i + 1 < argc) {
+        try {
+          fps = std::stoi(argv[++i]);
+        } catch (const std::exception &e) {
+          std::cerr << "Invalid FPS value" << std::endl;
+          fps = 600;
+        }
+      }
+    }
 
     std::ifstream rom(argv[1], std::ios::binary);
 
@@ -77,7 +93,7 @@ int main(int argc, char *argv[]) {
         sf::VideoMode(hardware::display_width * hardware::pixel_size,
                       hardware::display_height * hardware::pixel_size),
         "chip8");
-    window.setFramerateLimit(hardware::fps);
+    window.setFramerateLimit(fps);
     sf::RectangleShape pixel(
         sf::Vector2f(hardware::pixel_size, hardware::pixel_size));
 
@@ -100,8 +116,9 @@ int main(int argc, char *argv[]) {
 
       program_counter += 2;
 
-      std::cout << "Opcode: " << std::hex << std::setw(4) << std::setfill('0')
-                << opcode << '\n';
+      if (debug_mode)
+        std::cout << "Opcode: " << std::hex << std::setw(4) << std::setfill('0')
+                  << opcode << '\n';
 
       switch (opcode & 0xF000) { // reading the first 4 bits
       case 0x0000:
@@ -371,8 +388,9 @@ int main(int argc, char *argv[]) {
         }
         break;
       default:
-        std::cout << "Wrong opcode: " << std::hex << std::setw(4)
-                  << std::setfill('0') << opcode << '\n';
+        if (debug_mode)
+          std::cout << "Wrong opcode: " << std::hex << std::setw(4)
+                    << std::setfill('0') << opcode << '\n';
       }
 
       if (delay_timer > 0)
