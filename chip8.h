@@ -10,6 +10,7 @@ enum class display {
 };
 
 namespace hardware {
+inline constexpr int fps{600};
 inline constexpr int loop_speed{100};
 inline constexpr int max_registers{16};
 inline constexpr int memory_capacity{4096};
@@ -39,7 +40,8 @@ inline constexpr std::array<std::uint8_t, font_capacity> fontset{
 };
 } // namespace hardware
 
-bool isOverflow(int x, int y);
+bool isOverflow(std::uint8_t x, std::uint8_t y);
+bool isUnderflow(std::uint8_t x, std::uint8_t y);
 void testOpcode(const std::uint16_t &opcode);
 void testMemory(const std::vector<std::uint8_t> &memory);
 void testDisplay(const std::vector<std::vector<bool>> &vec);

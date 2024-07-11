@@ -11,6 +11,14 @@
 #include <random>
 #include <utility>
 
+// TODO: change opcode to union, so that accessing the nibbles is easier to read
+// TODO: clean up the comments (sometimes they're above the code, sometimes
+// they're next to it)
+// TODO: no need to print the opcodes, could have a program argument that
+// indicates the debug mode has to be set, in which it prints out the opcodes
+// (could do it easily with a bool and constexpr if)
+// TODO: have a program argument that indicates the fps to run at
+
 int main(int argc, char *argv[]) {
 
   try {
@@ -66,7 +74,7 @@ int main(int argc, char *argv[]) {
         sf::VideoMode(hardware::display_width * hardware::pixel_size,
                       hardware::display_height * hardware::pixel_size),
         "chip8");
-    window.setFramerateLimit(10);
+    window.setFramerateLimit(hardware::fps);
     sf::RectangleShape pixel(
         sf::Vector2f(hardware::pixel_size, hardware::pixel_size));
 
@@ -123,9 +131,8 @@ int main(int argc, char *argv[]) {
       case 0x6000: // 0x6XNN - set register VX to NN
         registers[(opcode & 0x0F00) >> 8] = (opcode & 0x00FF);
         break;
-      case 0x7000: // 0x7XNN - add NN to register VX
-        if (isOverflow(registers[(opcode & 0x0F00) >> 8], opcode & 0x00FF))
-          registers[0xF] = 1;
+      case 0x7000: // 0x7XNN - add NN to register VX. This instruction doesn't
+                   // set the carry flag even if it overflows
         registers[(opcode & 0x0F00) >> 8] += (opcode & 0x00FF);
         break;
       case 0x8000:
@@ -149,45 +156,67 @@ int main(int argc, char *argv[]) {
               registers[(opcode & 0x00F0) >> 4];
           break;
         case 0x0004: // 0x8XY4 - VX = VX + VY
-          if (isOverflow(registers[(opcode & 0x0F00) >> 8],
-                         registers[(opcode & 0x00F0) >> 4]))
-            registers[0xF] = 1;
+        {
+          // x and y are needed because we have to first do the
+          // operation, and then check if it originally
+          // overflowed (otherwise using the flag register as
+          // one of the operands won't work correctly)
+          std::uint8_t x{registers[(opcode & 0x0F00) >> 8]};
+          std::uint8_t y{registers[(opcode & 0x00F0) >> 4]};
           registers[(opcode & 0x0F00) >> 8] +=
               registers[(opcode & 0x00F0) >> 4];
-          break;
-        case 0x0005: // 0x8XY5 - VX = VX - VY
-          if (isOverflow(registers[(opcode & 0x0F00) >> 8],
-                         registers[(opcode & 0x00F0) >> 4]))
-            registers[0xF] = 1;
-          registers[(opcode & 0x0F00) >> 8] -=
-              registers[(opcode & 0x00F0) >> 4];
-          break;
-        case 0x0006: // 0x8XY6 - set VX to VY and then shift it to the right
-          registers[(opcode & 0x0F00) >> 8] = registers[(opcode & 0x00F0) >> 4];
-          if (std::bitset<8>{registers[(opcode & 0x0F00) >> 8]}.test(0) == true)
+          if (isOverflow(x, y))
             registers[0xF] = 1;
           else
             registers[0xF] = 0;
+        } break;
+        case 0x0005: // 0x8XY5 - VX = VX - VY
+        {
+          std::uint8_t x{registers[(opcode & 0x0F00) >> 8]};
+          std::uint8_t y{registers[(opcode & 0x00F0) >> 4]};
+          registers[(opcode & 0x0F00) >> 8] -=
+              registers[(opcode & 0x00F0) >> 4];
+          if (isUnderflow(x, y))
+            registers[0xF] = 0;
+          else
+            registers[0xF] = 1;
+        } break;
+        case 0x0006: // 0x8XY6 - set VX to VY and then shift it to the right
+        {
+          std::uint8_t x{registers[(opcode & 0x0F00) >> 8]};
+          std::uint8_t y{registers[(opcode & 0x00F0) >> 4]};
+          registers[(opcode & 0x0F00) >> 8] = registers[(opcode & 0x00F0) >> 4];
           registers[(opcode & 0x0F00) >> 8] =
               (registers[(opcode & 0x0F00) >> 8] >> 1);
-          break;
-        case 0x0007: // 0x8XY7 - VX = VY - VX
-          if (isOverflow(registers[(opcode & 0x0F00) >> 8],
-                         registers[(opcode & 0x00F0) >> 4]))
+          if (std::bitset<8>{x}.test(0) == true)
             registers[0xF] = 1;
+          else
+            registers[0xF] = 0;
+        } break;
+        case 0x0007: // 0x8XY7 - VX = VY - VX
+        {
+          std::uint8_t x{registers[(opcode & 0x0F00) >> 8]};
+          std::uint8_t y{registers[(opcode & 0x00F0) >> 4]};
           registers[(opcode & 0x0F00) >> 8] =
               registers[(opcode & 0x00F0) >> 4] -
               registers[(opcode & 0x0F00) >> 8];
-          break;
+          if (isOverflow(x, y))
+            registers[0xF] = 0;
+          else
+            registers[0xF] = 1;
+        } break;
         case 0x000E: // 0x8XYE - set VX to VY and then shift it to the left
+        {
+          std::uint8_t x{registers[(opcode & 0x0F00) >> 8]};
+          std::uint8_t y{registers[(opcode & 0x00F0) >> 4]};
           registers[(opcode & 0x0F00) >> 8] = registers[(opcode & 0x00F0) >> 4];
-          if (std::bitset<8>{registers[(opcode & 0x0F00) >> 8]}.test(7) == true)
+          registers[(opcode & 0x0F00) >> 8] =
+              (registers[(opcode & 0x0F00) >> 8] << 1);
+          if (std::bitset<8>{x}.test(7) == true)
             registers[0xF] = 1;
           else
             registers[0xF] = 0;
-          registers[(opcode & 0x0F00) >> 8] =
-              (registers[(opcode & 0x0F00) >> 8] << 1);
-          break;
+        } break;
         }
         break;
       case 0x9000: // 0x9XY0 - skip one instruction if VX != VY
@@ -201,31 +230,36 @@ int main(int argc, char *argv[]) {
       case 0xB000: // 0xBNNN - jump to NNN + V0
         program_counter = (opcode & 0x0FFF) + registers[0];
         break;
-      case 0xC000: // 0xCXNN - generate a random number and AND it with NN - put
-                   // it in VX
+      case 0xC000: // 0xCXNN - generate a random number and AND it with NN -
+                   // put it in VX
         static std::mt19937 mt{std::random_device{}()};
         static std::uniform_int_distribution generator{INT8_MIN, INT8_MAX};
         registers[(opcode & 0x0F00) >> 8] = (generator(mt) & (opcode & 0x00FF));
         break;
-      case 0xD000: // 0xDXYN - draw a sprite at (VX, VY) that's 8 pixes wide and
-                   // N pixels high
+      case 0xD000: // 0xDXYN - draw a sprite at (VX, VY) that's 8 pixes wide
+                   // and N pixels high
       {
         // modulo because the starting position of the sprite should wrap
         int x{registers[(opcode & 0x0F00) >> 8]};
         int y{registers[(opcode & 0x00F0) >> 4]};
         int height{(opcode & 0x000F)};
-        std::uint16_t pixel{};
+        std::uint8_t pixel{};
         constexpr int width{8};
 
         registers[0xF] = 0;
         for (int yline = 0; yline < height; ++yline) {
           pixel = memory[index_register + yline];
           for (int xline = 0; xline < width; ++xline) {
+            int wrapped_x = (x + xline) % hardware::display_width;
+            int wrapped_y = (y + yline) % hardware::display_height;
+            // check if the pixel at position xline is set to 1 (0x80 is
+            // 10000000)
             if ((pixel & (0x80 >> xline)) != 0) {
-              if (display[x + xline][y + yline] == true)
+              if (display[wrapped_x][wrapped_y] == true)
                 registers[0xF] = 1;
-              display[x + xline][y + yline] =
-                  (display[x + xline][y + yline] != true);
+              // monochrome pixel (true of false), so it's gonna flip the state
+              // of the pixel at wrapped_x and wrapped_y
+              display[wrapped_x][wrapped_y] = !display[wrapped_x][wrapped_y];
             }
           }
         }
@@ -254,29 +288,9 @@ int main(int argc, char *argv[]) {
                      // register, 2 at index + 1, and 8 at index + 2)
         {
           std::uint8_t number = registers[(opcode & 0x0F00) >> 8];
-          if (number < 100) {
-            memory[index_register] = 0;
-            ++index_register;
-            if (number < 10) {
-              memory[index_register] = 0;
-              ++index_register;
-              if (number == 0) {
-                memory[index_register] = 0;
-                ++index_register;
-              }
-            }
-          }
-          while (number > 0) {
-            memory[index_register] = number % 10;
-            ++index_register;
-            number /= 10;
-          }
-          std::swap(
-              memory[index_register],
-              memory[index_register -
-                     2]); // this is necessary because using modulo will give
-                          // the digits in different order, eg. for 156 it will
-                          // give 6, 5, and 1 instead of 1, 5, 6
+          memory[index_register] = number / 100;
+          memory[index_register + 1] = (number / 10) % 10;
+          memory[index_register + 2] = number % 10;
         } break;
         case 0x0005:
           switch (opcode & 0x00F0) {
@@ -285,8 +299,8 @@ int main(int argc, char *argv[]) {
             break;
           case 0x0050: // 0xFX55 - store the value of each register V0 to VX
                        // (INCLUSIVE) in successive memory addresses, starting
-                       // with the one stored in the index register (so, V0 will
-                       // be at index + 0, V1 will be at index + 1, etc.)
+                       // with the one stored in the index register (so, V0
+                       // will be at index + 0, V1 will be at index + 1, etc.)
           {
             int x = (opcode & 0x0F00) >> 8;
             for (int i = 0; i <= x; ++i) {
@@ -311,8 +325,8 @@ int main(int argc, char *argv[]) {
           sound_timer = registers[(opcode & 0x0F00) >> 8];
           break;
         case 0x0009: // 0xFX29 - set the index register to the address of the
-                     // hex character in VX (they're stored at the beginning of
-                     // memory)
+                     // hex character in VX (they're stored at the beginning
+                     // of memory)
         {
           std::uint8_t character = registers[(opcode & 0x0F00) >> 8];
           index_register =
@@ -320,8 +334,8 @@ int main(int argc, char *argv[]) {
                                  // beginning of the memory, and 5 because each
                                  // character takes up 5 elements of the array
         } break;
-        case 0x000A: // 0xFX0A - waits for key input - if a key is pressed, its
-                     // hex value is put into XV
+        case 0x000A: // 0xFX0A - waits for key input - if a key is pressed,
+                     // its hex value is put into XV
         {
           bool was_key_pressed = false;
           for (const auto &key : keyboard_map) {
