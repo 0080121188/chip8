@@ -1,4 +1,6 @@
 #include "chip8.h"
+#include <SFML/Audio.hpp>
+#include <SFML/Audio/SoundBuffer.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <bitset>
@@ -78,6 +80,13 @@ int main(int argc, char *argv[]) {
     window.setFramerateLimit(hardware::fps);
     sf::RectangleShape pixel(
         sf::Vector2f(hardware::pixel_size, hardware::pixel_size));
+
+    sf::SoundBuffer buffer;
+    if (!buffer.loadFromFile("beep.ogg"))
+      throw std::runtime_error("Failed to load the beep sound.");
+
+    sf::Sound sound;
+    sound.setBuffer(buffer);
 
     while (window.isOpen()) {
       sf::Event event;
@@ -371,7 +380,7 @@ int main(int argc, char *argv[]) {
 
       if (sound_timer > 0) {
         if (sound_timer == 1) {
-          std::cout << "beep\n";
+          sound.play();
         }
         --sound_timer;
       }
