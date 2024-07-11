@@ -13,9 +13,6 @@
 #include <random>
 #include <utility>
 
-// TODO: clean up the comments (sometimes they're above the code, sometimes
-// they're next to it)
-
 int main(int argc, char *argv[]) {
 
   try {
@@ -48,8 +45,8 @@ int main(int argc, char *argv[]) {
     std::streampos rom_size = rom.tellg();
     rom.seekg(0, std::ios::beg);
 
-    std::vector<std::uint8_t> memory(hardware::memory_capacity,
-                                     0); // 4096 bytes
+    // 4096 bytes
+    std::vector<std::uint8_t> memory(hardware::memory_capacity, 0);
 
     for (int i = 0; i < hardware::font_capacity; ++i) {
       memory[i] = hardware::fontset[i];
@@ -59,19 +56,22 @@ int main(int argc, char *argv[]) {
                                       hardware::memory_program_start),
              rom_size);
 
+    // 64x32
     std::vector<std::vector<bool>> display(
         hardware::display_width,
-        std::vector<bool>(hardware::display_height, 0)); // 64x32
-    std::vector<std::uint16_t> stack(
-        2, 0); // original chip8 has 16 two-byte entries
-    std::vector<std::uint8_t> registers(hardware::max_registers,
-                                        0); // 16 general registers
-                                            //    std::uint16_t opcode{0};
+        std::vector<bool>(hardware::display_height, 0));
+    // original chip8 has 16 two-byte entries
+    std::vector<std::uint16_t> stack(2, 0);
+    // 16 general registers
+    std::vector<std::uint8_t> registers(hardware::max_registers, 0);
     std::uint16_t stack_pointer{0};
     std::uint16_t program_counter{hardware::memory_program_start};
-    std::uint16_t index_register{0}; // used to point at locations in memory
-    std::uint8_t delay_timer{};      // decremented at 60hz until 0
-    std::uint8_t sound_timer{};      // like delay timer, beeps if it's not 0
+    // used to point at locations in memory
+    std::uint16_t index_register{0};
+    // decremented at 60hz until 0
+    std::uint8_t delay_timer{};
+    // like delay timer, beeps if it's not 0
+    std::uint8_t sound_timer{};
 
     // since the keypad is hexadecimal there has to be a qwerty equivalent
     std::map<int, sf::Keyboard::Key> keyboard_map{
@@ -108,8 +108,8 @@ int main(int argc, char *argv[]) {
           window.close();
       }
 
-      opcode.full = memory[program_counter] << 8 |
-                    memory[program_counter + 1]; // merge both bytes into opcode
+      // merge both bytes into opcode
+      opcode.full = memory[program_counter] << 8 | memory[program_counter + 1];
 
       if (debug_mode)
         std::cout << "Opcode: " << std::hex << std::setw(4) << std::setfill('0')
@@ -117,70 +117,82 @@ int main(int argc, char *argv[]) {
 
       program_counter += 2;
 
-      switch (opcode.nibble1) { // reading the first 4 bits
+      switch (opcode.nibble1) {
       case 0x0:
         switch (opcode.nibble4) {
-        case 0x0: // 0x00E0 clears the screen
+        // 0x00E0 clears the screen
+        case 0x0:
           for (int x = 0; x < hardware::display_width; ++x)
             for (int y = 0; y < hardware::display_height; ++y)
               display[x][y] = 0;
           break;
-        case 0xE: // 0x00EE returns from a call
+        // 0x00EE returns from a call
+        case 0xE:
           program_counter = stack.back();
           stack.pop_back();
           break;
           // there's also 0NNN which doesn't get used
         }
         break;
-      case 0x1: // 0x1NNN - jump to NNN
+      // 0x1NNN - jump to NNN
+      case 0x1:
         program_counter = (opcode.full & 0x0FFF);
         break;
-      case 0x2: // 0x2NNN - call something at NNN
+      // 0x2NNN - call something at NNN
+      case 0x2:
         stack.push_back(program_counter);
         program_counter = (opcode.full & 0x0FFF);
         break;
-      case 0x3: // 0x3XNN - skip one instruction if VX == NN
+      // 0x3XNN - skip one instruction if VX == NN
+      case 0x3:
         if (registers[opcode.nibble2] == (opcode.full & 0x00FF))
           program_counter += 2;
         break;
-      case 0x4: // 0x4XNN - skip one instruction if VX != NN
+      // 0x4XNN - skip one instruction if VX != NN
+      case 0x4:
         if (registers[opcode.nibble2] != (opcode.full & 0x00FF))
           program_counter += 2;
         break;
-      case 0x5: // 0x5XY0 - skip one instruction if VX == VY
+      // 0x5XY0 - skip one instruction if VX == VY
+      case 0x5:
         if (registers[opcode.nibble2] == registers[opcode.nibble3])
           program_counter += 2;
         break;
-      case 0x6: // 0x6XNN - set register VX to NN
+      // 0x6XNN - set register VX to NN
+      case 0x6:
         registers[opcode.nibble2] = (opcode.full & 0x00FF);
         break;
-      case 0x7: // 0x7XNN - add NN to register VX. This instruction doesn't
-                // set the carry flag even if it overflows
+      // 0x7XNN - add NN to register VX. This instruction doesn't set the
+      // carry flag even if it overflows
+      case 0x7:
         registers[opcode.nibble2] += (opcode.full & 0x00FF);
         break;
       case 0x8:
         switch (opcode.nibble4) {
-        case 0x0: // 0x8XY0 - set regsiter VX to VY
+        // 0x8XY0 - set regsiter VX to VY
+        case 0x0:
           registers[opcode.nibble2] = registers[opcode.nibble3];
           break;
-        case 0x1: // 0x8XY1 - VX = VX OR VY
+        // 0x8XY1 - VX = VX OR VY
+        case 0x1:
           registers[opcode.nibble2] =
               registers[opcode.nibble2] | registers[opcode.nibble3];
           break;
-        case 0x2: // 0x8XY2 - VX = VX AND VY
+        // 0x8XY2 - VX = VX AND VY
+        case 0x2:
           registers[opcode.nibble2] =
               registers[opcode.nibble2] & registers[opcode.nibble3];
           break;
-        case 0x3: // 0x8XY3 - VX = VX XOR VY
+        // 0x8XY3 - VX = VX XOR VY
+        case 0x3:
           registers[opcode.nibble2] =
               registers[opcode.nibble2] ^ registers[opcode.nibble3];
           break;
-        case 0x4: // 0x8XY4 - VX = VX + VY
-        {
-          // x and y are needed because we have to first do the
-          // operation, and then check if it originally
-          // overflowed (otherwise using the flag register as
-          // one of the operands won't work correctly)
+        // 0x8XY4 - VX = VX + VY
+        case 0x4: {
+          // x and y are needed because we have to first do the operation, and
+          // then check if it originally overflowed (otherwise using the flag
+          // register as one of the operands won't work correctly)
           std::uint8_t x{registers[opcode.nibble2]};
           std::uint8_t y{registers[opcode.nibble3]};
           registers[opcode.nibble2] += registers[opcode.nibble3];
@@ -189,8 +201,8 @@ int main(int argc, char *argv[]) {
           else
             registers[0xF] = 0;
         } break;
-        case 0x5: // 0x8XY5 - VX = VX - VY
-        {
+        // 0x8XY5 - VX = VX - VY
+        case 0x5: {
           std::uint8_t x{registers[opcode.nibble2]};
           std::uint8_t y{registers[opcode.nibble3]};
           registers[opcode.nibble2] -= registers[opcode.nibble3];
@@ -199,8 +211,8 @@ int main(int argc, char *argv[]) {
           else
             registers[0xF] = 1;
         } break;
-        case 0x6: // 0x8XY6 - set VX to VY and then shift it to the right
-        {
+        // 0x8XY6 - set VX to VY and then shift it to the right
+        case 0x6: {
           std::uint8_t x{registers[opcode.nibble2]};
           std::uint8_t y{registers[opcode.nibble3]};
           registers[opcode.nibble2] = registers[opcode.nibble3];
@@ -210,8 +222,8 @@ int main(int argc, char *argv[]) {
           else
             registers[0xF] = 0;
         } break;
-        case 0x7: // 0x8XY7 - VX = VY - VX
-        {
+        // 0x8XY7 - VX = VY - VX
+        case 0x7: {
           std::uint8_t x{registers[opcode.nibble2]};
           std::uint8_t y{registers[opcode.nibble3]};
           registers[opcode.nibble2] =
@@ -221,8 +233,8 @@ int main(int argc, char *argv[]) {
           else
             registers[0xF] = 1;
         } break;
-        case 0xE: // 0x8XYE - set VX to VY and then shift it to the left
-        {
+        // 0x8XYE - set VX to VY and then shift it to the left
+        case 0xE: {
           std::uint8_t x{registers[opcode.nibble2]};
           std::uint8_t y{registers[opcode.nibble3]};
           registers[opcode.nibble2] = registers[opcode.nibble3];
@@ -234,25 +246,29 @@ int main(int argc, char *argv[]) {
         } break;
         }
         break;
-      case 0x9: // 0x9XY0 - skip one instruction if VX != VY
+      // 0x9XY0 - skip one instruction if VX != VY
+      case 0x9:
         if (registers[opcode.nibble2] != registers[opcode.nibble3])
           program_counter += 2;
         break;
-      case 0xA: // 0xANNN - set the index register to NNN
+      // 0xANNN - set the index register to NNN
+      case 0xA:
         index_register = (opcode.full & 0x0FFF);
         break;
-      case 0xB: // 0xBNNN - jump to NNN + V0
+      // 0xBNNN - jump to NNN + V0
+      case 0xB:
         program_counter = (opcode.full & 0x0FFF) + registers[0];
         break;
-      case 0xC: // 0xCXNN - generate a random number and AND it with NN -
-                // put it in VX
+      // 0xCXNN - generate a random number and AND it with NN; put the result in
+      // VX
+      case 0xC:
         static std::mt19937 mt{std::random_device{}()};
         static std::uniform_int_distribution generator{INT8_MIN, INT8_MAX};
         registers[opcode.nibble2] = (generator(mt) & (opcode.full & 0x00FF));
         break;
-      case 0xD: // 0xDXYN - draw a sprite at (VX, VY) that's 8 pixes wide
-                // and N pixels high
-      {
+      // 0xDXYN - draw a sprite at (VX, VY) that's 8 pixes wide and N pixels
+      // high
+      case 0xD: {
         // modulo because the starting position of the sprite should wrap
         int x{registers[opcode.nibble2]};
         int y{registers[opcode.nibble3]};
@@ -280,15 +296,16 @@ int main(int argc, char *argv[]) {
       } break;
       case 0xE:
         switch (opcode.nibble3) {
-        case 0x9: // 0xEX9E - skip one instruction if the key corresponding
-                  // to the value in VX is pressed
+        // 0xEX9E - skip one instruction if the key corresponding to the value
+        // in VX is pressed
+        case 0x9:
           if (sf::Keyboard::isKeyPressed(
                   keyboard_map[registers[opcode.nibble2]]))
             program_counter += 2;
           break;
-        case 0xA: // 0xEXA1 - skip one instruction if the key corresponding
-                  // to the value in VX is NOT pressed
-        {
+        // 0xEXA1 - skip one instruction if the key corresponding to the value
+        // in VX is NOT pressed
+        case 0xA: {
           auto key = keyboard_map.find(registers[opcode.nibble2]);
           if (!sf::Keyboard::isKeyPressed(key->second))
             program_counter += 2;
@@ -296,11 +313,11 @@ int main(int argc, char *argv[]) {
         }
       case 0xF:
         switch (opcode.nibble4) {
-        case 0x3: // 0xFX33 - BCD conversion - take the number in VX (say
-                  // 127), convert it to its three digits (so 1, 2, and 7),
-                  // and store it in memory (1 at the address in the index
-                  // register, 2 at index + 1, and 8 at index + 2)
-        {
+        // 0xFX33 - BCD conversion - take the number in VX (say 127), convert it
+        // to its three digits (so 1, 2, and 7), and store it in memory (1 at
+        // the address in the index register, 2 at index + 1, and 8 at index +
+        // 2)
+        case 0x3: {
           std::uint8_t number = registers[opcode.nibble2];
           memory[index_register] = number / 100;
           memory[index_register + 1] = (number / 10) % 10;
@@ -308,49 +325,52 @@ int main(int argc, char *argv[]) {
         } break;
         case 0x5:
           switch (opcode.nibble3) {
-          case 0x1: // 0xFX15 - set the delay timer to the value in VX
+          // 0xFX15 - set the delay timer to the value in VX
+          case 0x1:
             delay_timer = registers[opcode.nibble2];
             break;
-          case 0x5: // 0xFX55 - store the value of each register V0 to VX
-                    // (INCLUSIVE) in successive memory addresses, starting
-                    // with the one stored in the index register (so, V0
-                    // will be at index + 0, V1 will be at index + 1, etc.)
-          {
+          // 0xFX55 - store the value of each register V0 to VX (INCLUSIVE) in
+          // successive memory addresses, starting with the one stored in the
+          // index register (so, V0 will be at index + 0, V1 will be at index +
+          // 1, etc.)
+          case 0x5: {
             int x = opcode.nibble2;
             for (int i = 0; i <= x; ++i) {
               memory[index_register + i] = registers[i];
             }
-            index_register += x + 1; // +1 is here to match the loop condition
+            // +1 is here to match the loop condition
+            index_register += x + 1;
           } break;
-          case 0x6: // 0xFX65 - the same as 0xFX55 but reverse
-          {
+          // 0xFX65 - the same as 0xFX55 but reverse
+          case 0x6: {
             int x = opcode.nibble2;
             for (int i = 0; i <= x; ++i) {
               registers[i] = memory[index_register + i];
             }
-            index_register += x + 1; // +1 to match the loop condition
+            // +1 to match the loop condition
+            index_register += x + 1;
           } break;
           }
           break;
-        case 0x7: // 0xFX07 - set register VX to delay timer
+        // 0xFX07 - set register VX to delay timer
+        case 0x7:
           registers[opcode.nibble2] = delay_timer;
           break;
-        case 0x8: // 0xFX18 - set the sound timer to the value in VX
+        // 0xFX18 - set the sound timer to the value in VX
+        case 0x8:
           sound_timer = registers[opcode.nibble2];
           break;
-        case 0x9: // 0xFX29 - set the index register to the address of the
-                  // hex character in VX (they're stored at the beginning
-                  // of memory)
-        {
+        // 0xFX29 - set the index register to the address of the hex character
+        // in VX (they're stored at the beginning of memory)
+        case 0x9: {
           std::uint8_t character = registers[opcode.nibble2];
-          index_register =
-              0 + character * 5; // 0 because the characters are at the
-                                 // beginning of the memory, and 5 because each
-                                 // character takes up 5 elements of the array
+          // 0 because the characters are at the beginning of the memory, and 5
+          // because each character takes up 5 elements of the array
+          index_register = 0 + character * 5;
         } break;
-        case 0xA: // 0xFX0A - waits for key input - if a key is pressed,
-                  // its hex value is put into XV
-        {
+        // 0xFX0A - waits for key input - if a key is pressed, its hex value is
+        // put into XV
+        case 0xA: {
           bool was_key_pressed = false;
           for (const auto &key : keyboard_map) {
             if (sf::Keyboard::isKeyPressed(key.second)) {
@@ -362,8 +382,8 @@ int main(int argc, char *argv[]) {
           if (!was_key_pressed)
             program_counter -= 2;
         } break;
-        case 0xE: // 0xFX1E - add the value in VX to the index
-                  // register
+        // 0xFX1E - add the value in VX to the index register
+        case 0xE:
           index_register += registers[opcode.nibble2];
           // overflows outside of the normal addressing range (if it overflows
           // from 0FFF to above 1000)
