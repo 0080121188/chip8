@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     if (argc < 2)
       throw std::invalid_argument("No game loaded");
 
-    int fps{600};
+    int fps{60};
     bool debug_mode{false};
 
     for (int i = 2; i < argc; i++) {
@@ -100,6 +100,9 @@ int main(int argc, char *argv[]) {
     sound.setBuffer(buffer);
 
     Opcode opcode{};
+    // only 2 instructions (draw and clear) do anything with the display, so
+    // there's no need to update the display every cycle
+    bool draw_flag{false};
 
     while (window.isOpen()) {
       sf::Event event;
@@ -125,6 +128,7 @@ int main(int argc, char *argv[]) {
           for (int x = 0; x < hardware::display_width; ++x)
             for (int y = 0; y < hardware::display_height; ++y)
               display[x][y] = 0;
+          draw_flag = true;
           break;
         // 0x00EE returns from a call
         case 0xE:
@@ -293,6 +297,7 @@ int main(int argc, char *argv[]) {
             }
           }
         }
+        draw_flag = true;
       } break;
       case 0xE:
         switch (opcode.nibble3) {
@@ -410,20 +415,23 @@ int main(int argc, char *argv[]) {
         --sound_timer;
       }
 
-      window.clear();
+      if (draw_flag) {
+        window.clear();
 
-      for (size_t x = 0; x < display.size(); ++x) {
-        for (size_t y = 0; y < display[y].size(); ++y) {
-          if (display[x][y]) {
-            pixel.setPosition(x * hardware::pixel_size,
-                              y * hardware::pixel_size);
-            pixel.setFillColor(sf::Color::White);
-            window.draw(pixel);
+        for (size_t x = 0; x < display.size(); ++x) {
+          for (size_t y = 0; y < display[y].size(); ++y) {
+            if (display[x][y]) {
+              pixel.setPosition(x * hardware::pixel_size,
+                                y * hardware::pixel_size);
+              pixel.setFillColor(sf::Color::White);
+              window.draw(pixel);
+            }
           }
         }
-      }
 
-      window.display();
+        window.display();
+        draw_flag = false;
+      }
     }
   } catch (const std::invalid_argument &e) {
     std::cerr << "Error: " << e.what() << '\n';
