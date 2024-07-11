@@ -181,16 +181,19 @@ int main(int argc, char *argv[]) {
         case 0x1:
           registers[opcode.nibble2] =
               registers[opcode.nibble2] | registers[opcode.nibble3];
+          registers[0xF] = 0;
           break;
         // 0x8XY2 - VX = VX AND VY
         case 0x2:
           registers[opcode.nibble2] =
               registers[opcode.nibble2] & registers[opcode.nibble3];
+          registers[0xF] = 0;
           break;
         // 0x8XY3 - VX = VX XOR VY
         case 0x3:
           registers[opcode.nibble2] =
               registers[opcode.nibble2] ^ registers[opcode.nibble3];
+          registers[0xF] = 0;
           break;
         // 0x8XY4 - VX = VX + VY
         case 0x4: {
@@ -285,7 +288,7 @@ int main(int argc, char *argv[]) {
           pixel = memory[index_register + yline];
           for (int xline = 0; xline < width; ++xline) {
             int wrapped_x = (x + xline) % hardware::display_width;
-            int wrapped_y = (y + yline) % hardware::display_height;
+            int wrapped_y = ((y + yline) & 0xFF) % hardware::display_height;
             // check if the pixel at position xline is set to 1 (0x80 is
             // 10000000)
             if ((pixel & (0x80 >> xline)) != 0) {
