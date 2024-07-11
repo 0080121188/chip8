@@ -9,6 +9,16 @@ enum class display {
   white,
 };
 
+union Opcode {
+  std::uint16_t full;
+  struct {
+    std::uint16_t nibble4 : 4;
+    std::uint16_t nibble3 : 4;
+    std::uint16_t nibble2 : 4;
+    std::uint16_t nibble1 : 4;
+  };
+};
+
 namespace hardware {
 inline constexpr int loop_speed{100};
 inline constexpr int max_registers{16};
