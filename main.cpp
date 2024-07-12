@@ -277,25 +277,25 @@ int main(int argc, char *argv[]) {
       // high
       case 0xD: {
         // modulo because the starting position of the sprite should wrap
-        int x{registers[opcode.nibble2]};
-        int y{registers[opcode.nibble3]};
-        int height{(opcode.nibble4)};
+        int x{registers[opcode.nibble2] % hardware::display_width};
+        int y{registers[opcode.nibble3] % hardware::display_height};
+        int height{opcode.nibble4};
         std::uint8_t pixel{};
         constexpr int width{8};
-
         registers[0xF] = 0;
+
         for (int yline = 0; yline < height; ++yline) {
           pixel = memory[index_register + yline];
           for (int xline = 0; xline < width; ++xline) {
-            int wrapped_x = (x + xline) % hardware::display_width;
-            int wrapped_y = ((y + yline) & 0xFF) % hardware::display_height;
             // check if the pixel at position xline is set to 1 (0x80 is
             // 10000000)
             if ((pixel & (0x80 >> xline)) != 0) {
+              int wrapped_x = (x + xline) % hardware::display_width;
+              int wrapped_y = (y + yline) % hardware::display_height;
               if (display[wrapped_x][wrapped_y] == true)
                 registers[0xF] = 1;
-              // monochrome pixel (true of false), so it's gonna flip the state
-              // of the pixel at wrapped_x and wrapped_y
+              // monochrome pixel (true of false), so it's gonna flip the
+              // state of the pixel at wrapped_x and wrapped_y
               display[wrapped_x][wrapped_y] = !display[wrapped_x][wrapped_y];
             }
           }
@@ -379,14 +379,22 @@ int main(int argc, char *argv[]) {
         // 0xFX0A - waits for key input - if a key is pressed, its hex value is
         // put into XV
         case 0xA: {
-          bool was_key_pressed = false;
+          bool is_key_pressed{false};
+          bool was_key_pressed{false};
+
           for (const auto &key : keyboard_map) {
             if (sf::Keyboard::isKeyPressed(key.second)) {
               registers[opcode.nibble2] = key.first;
+              is_key_pressed = true;
               was_key_pressed = true;
+              // need to wait for the key to get released
+              while (is_key_pressed)
+                if (!sf::Keyboard::isKeyPressed(key.second))
+                  is_key_pressed = false;
               break;
             }
           }
+
           if (!was_key_pressed)
             program_counter -= 2;
         } break;
