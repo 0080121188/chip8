@@ -12,4 +12,12 @@ $ chip8_emulator your_rom -d -fps 600
 ```
 
 # Where to get ROMs
-[Here](https://github.com/badlogic/chip8/tree/master/roms)
+[Here](https://johnearnest.github.io/chip8Archive/)
+
+# TODO (tests)
+- [x] IBM logo
+- [x] corax+
+- [x] flags
+- [ ] quirks
+- [x] keypad
+- [ ] beep

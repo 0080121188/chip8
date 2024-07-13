@@ -280,16 +280,16 @@ int main(int argc, char *argv[]) {
         int x{registers[opcode.nibble2] % hardware::display_width};
         int y{registers[opcode.nibble3] % hardware::display_height};
         int height{opcode.nibble4};
-        std::uint8_t pixel{};
+        std::uint8_t sprite{};
         constexpr int width{8};
         registers[0xF] = 0;
 
         for (int yline = 0; yline < height; ++yline) {
-          pixel = memory[index_register + yline];
+          sprite = memory[index_register + yline];
           for (int xline = 0; xline < width; ++xline) {
             // check if the pixel at position xline is set to 1 (0x80 is
             // 10000000)
-            if ((pixel & (0x80 >> xline)) != 0) {
+            if ((sprite & (0x80 >> xline)) != 0) {
               int wrapped_x = (x + xline) % hardware::display_width;
               int wrapped_y = (y + yline) % hardware::display_height;
               if (display[wrapped_x][wrapped_y] == true)
