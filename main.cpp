@@ -285,18 +285,22 @@ int main(int argc, char *argv[]) {
         registers[0xF] = 0;
 
         for (int yline = 0; yline < height; ++yline) {
+          if (y + yline >= hardware::display_width)
+            break;
+
           sprite = memory[index_register + yline];
+
           for (int xline = 0; xline < width; ++xline) {
+            if (x + xline >= hardware::display_width)
+              break;
             // check if the pixel at position xline is set to 1 (0x80 is
             // 10000000)
             if ((sprite & (0x80 >> xline)) != 0) {
-              int wrapped_x = (x + xline) % hardware::display_width;
-              int wrapped_y = (y + yline) % hardware::display_height;
-              if (display[wrapped_x][wrapped_y] == true)
+              if (display[x + xline][y + yline] == true)
                 registers[0xF] = 1;
               // monochrome pixel (true of false), so it's gonna flip the
               // state of the pixel at wrapped_x and wrapped_y
-              display[wrapped_x][wrapped_y] = !display[wrapped_x][wrapped_y];
+              display[x + xline][y + yline] = !display[x + xline][y + yline];
             }
           }
         }
