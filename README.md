@@ -4,7 +4,8 @@ $ chip8_emulator your_rom
 ```
 ## Optional arguments 
 -d  
-* Enables debug mode (it only displays the opcodes)  
+* Enables debug mode (it only displays the opcodes) 
+   
 -fps *value*  
 * Runs the program at *value* fps.  
 ```
