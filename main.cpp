@@ -420,10 +420,8 @@ int main(int argc, char *argv[]) {
         --delay_timer;
 
       if (sound_timer > 0) {
-        if (sound_timer == 1) {
-          sound.play();
-        }
         --sound_timer;
+        sound.play();
       }
 
       if (draw_flag) {
