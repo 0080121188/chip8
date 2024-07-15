@@ -20,4 +20,4 @@ $ chip8_emulator your_rom -d -fps 600
 - [x] flags
 - [ ] quirks
 - [x] keypad
-- [ ] beep
+- [x] beep
