@@ -20,7 +20,8 @@ union Opcode {
 };
 
 namespace hardware {
-constexpr int maxInstructionsPerFrame = 16;
+constexpr int max_instructions_per_check{100};
+constexpr int max_instructions_per_frame{16};
 inline constexpr int loop_speed{100};
 inline constexpr int max_registers{16};
 inline constexpr int memory_capacity{4096};

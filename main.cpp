@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
     Opcode opcode{};
     // only 2 instructions (draw and clear) do anything with the display, so
     // there's no need to update the display every cycle
+
     bool draw_flag{false};
 
     sf::Clock clock;
@@ -115,16 +116,18 @@ int main(int argc, char *argv[]) {
           window.close();
       }
 
-      double deltaTime = clock.restart().asSeconds();
-      accumulator += deltaTime;
+      double delta_time{clock.restart().asSeconds()};
+      accumulator += delta_time;
+      int total_instructions{0};
 
-      while (accumulator >= frameTime) {
-        bool allowDraw = true;
-        int instructionsThisFrame = 0;
+      while (accumulator >= frameTime &&
+             total_instructions < hardware::max_instructions_per_frame) {
+        bool allow_draw{true};
+        int instructions_this_frame{0};
 
-        while (allowDraw ||
-               (opcode.nibble1 != 0xD &&
-                instructionsThisFrame <= hardware::maxInstructionsPerFrame)) {
+        while (allow_draw || (opcode.nibble1 != 0xD &&
+                              instructions_this_frame <=
+                                  hardware::max_instructions_per_check)) {
 
           // merge both bytes into opcode
           opcode.full =
@@ -292,38 +295,41 @@ int main(int argc, char *argv[]) {
             break;
           // 0xDXYN - draw a sprite at (VX, VY) that's 8 pixes wide and N pixels
           // high
-          case 0xD: {
-            // modulo because the starting position of the sprite should wrap
-            int x{registers[opcode.nibble2] % hardware::display_width};
-            int y{registers[opcode.nibble3] % hardware::display_height};
-            int height{opcode.nibble4};
-            std::uint8_t sprite{};
-            constexpr int width{8};
-            registers[0xF] = 0;
+          case 0xD:
+            allow_draw = false;
+            {
+              // modulo because the starting position of the sprite should wrap
+              int x{registers[opcode.nibble2] % hardware::display_width};
+              int y{registers[opcode.nibble3] % hardware::display_height};
+              int height{opcode.nibble4};
+              std::uint8_t sprite{};
+              constexpr int width{8};
+              registers[0xF] = 0;
 
-            for (int yline = 0; yline < height; ++yline) {
-              if (y + yline >= hardware::display_width)
-                break;
-
-              sprite = memory[index_register + yline];
-
-              for (int xline = 0; xline < width; ++xline) {
-                if (x + xline >= hardware::display_width)
+              for (int yline = 0; yline < height; ++yline) {
+                if (y + yline >= hardware::display_width)
                   break;
-                // check if the pixel at position xline is set to 1 (0x80 is
-                // 10000000)
-                if ((sprite & (0x80 >> xline)) != 0) {
-                  if (display[x + xline][y + yline] == true)
-                    registers[0xF] = 1;
-                  // monochrome pixel (true of false), so it's gonna flip the
-                  // state of the pixel at wrapped_x and wrapped_y
-                  display[x + xline][y + yline] =
-                      !display[x + xline][y + yline];
+
+                sprite = memory[index_register + yline];
+
+                for (int xline = 0; xline < width; ++xline) {
+                  if (x + xline >= hardware::display_width)
+                    break;
+                  // check if the pixel at position xline is set to 1 (0x80 is
+                  // 10000000)
+                  if ((sprite & (0x80 >> xline)) != 0) {
+                    if (display[x + xline][y + yline] == true)
+                      registers[0xF] = 1;
+                    // monochrome pixel (true of false), so it's gonna flip the
+                    // state of the pixel at wrapped_x and wrapped_y
+                    display[x + xline][y + yline] =
+                        !display[x + xline][y + yline];
+                  }
                 }
               }
+              draw_flag = true;
             }
-            draw_flag = true;
-          } break;
+            break;
           case 0xE:
             switch (opcode.nibble3) {
             // 0xEX9E - skip one instruction if the key corresponding to the
@@ -438,11 +444,22 @@ int main(int argc, char *argv[]) {
                         << std::setfill('0') << opcode.full << '\n';
           }
 
-          if (opcode.nibble1 == 0xD) {
-            allowDraw = false;
-          }
+          ++total_instructions;
+          ++instructions_this_frame;
 
-          instructionsThisFrame++;
+          if (instructions_this_frame % hardware::max_instructions_per_check ==
+              0) {
+            sf::Event event;
+            while (window.pollEvent(event)) {
+              if (event.type == sf::Event::Closed) {
+                window.close();
+                return 0; // Exit the program immediately
+              }
+            }
+          }
+          if (total_instructions >= hardware::max_instructions_per_frame) {
+            break;
+          }
         }
 
         if (delay_timer > 0)
