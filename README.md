@@ -2,6 +2,7 @@
 ```
 $ chip8_emulator your_rom
 ```
+* *Need to have the beep.ogg file in the same folder as the chip8\_emulator.*  
 ## Optional arguments 
 -d  
 * Enables debug mode (it only displays the opcodes) 
