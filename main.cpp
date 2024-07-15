@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
           std::uint8_t y{registers[opcode.nibble3]};
           registers[opcode.nibble2] =
               registers[opcode.nibble3] - registers[opcode.nibble2];
-          if (isOverflow(x, y))
+          if (isUnderflow(y, x))
             registers[0xF] = 0;
           else
             registers[0xF] = 1;
