@@ -447,13 +447,15 @@ int main(int argc, char *argv[]) {
           ++total_instructions;
           ++instructions_this_frame;
 
+          // this is so the window doesn't hang when trying to exit while it's
+          // running
           if (instructions_this_frame % hardware::max_instructions_per_check ==
               0) {
             sf::Event event;
             while (window.pollEvent(event)) {
               if (event.type == sf::Event::Closed) {
                 window.close();
-                return 0; // Exit the program immediately
+                return 0;
               }
             }
           }
