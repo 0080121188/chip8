@@ -455,7 +455,7 @@ int main(int argc, char *argv[]) {
             while (window.pollEvent(event)) {
               if (event.type == sf::Event::Closed) {
                 window.close();
-                return 0;
+                return EXIT_SUCCESS;
               }
             }
           }
@@ -503,5 +503,5 @@ int main(int argc, char *argv[]) {
     std::cerr << "Unknown error\n";
     return EXIT_FAILURE;
   }
-  return 0;
+  return EXIT_SUCCESS;
 }
