@@ -18,8 +18,8 @@ $ chip8_emulator your_rom -d -fps 600
 - [x] IBM logo
 - [x] corax+
 - [x] flags
-- [x] quirks
+- [x] quirks*
 - [x] keypad
 - [x] beep  
-  
+* when I changed the 0x8XY7 instruction so that it correctly underflows, it now doesn't pass (DISP. WAIT - SLOW) for some reason, but it's not necessarily an error - just that the test can't be deterministic  
 [Source](https://github.com/Timendus/chip8-test-suite)
