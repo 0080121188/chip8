@@ -69,9 +69,9 @@ int main(int argc, char *argv[]) {
     // used to point at locations in memory
     std::uint16_t index_register{0};
     // decremented at 60hz until 0
-    std::uint8_t delay_timer{};
+    std::uint8_t delay_timer{0};
     // like delay timer, beeps if it's not 0
-    std::uint8_t sound_timer{};
+    std::uint8_t sound_timer{0};
 
     // since the keypad is hexadecimal there has to be a qwerty equivalent
     std::map<int, sf::Keyboard::Key> keyboard_map{
