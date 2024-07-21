@@ -4,11 +4,6 @@
 #include <cstdint>
 #include <vector>
 
-enum class display {
-  black,
-  white,
-};
-
 union Opcode {
   std::uint16_t full;
   struct {
