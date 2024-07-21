@@ -14,7 +14,7 @@ $ chip8_emulator your_rom -d -fps 10
 ```
 
 # Where to get ROMs
-* [Here](https://johnearnest.github.io/chip8Archive/)
+* [Here](https://johnearnest.github.io/chip8Archive/?sort=platform#chip8)
 
 # Tests
 - [x] IBM logo
