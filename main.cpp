@@ -47,21 +47,12 @@ int main(int argc, char *argv[]) {
 
     // 4096 bytes
     std::vector<std::uint8_t> memory(hardware::memory_capacity, 0);
-
-    for (int i = 0; i < hardware::font_capacity; ++i) {
-      memory[i] = hardware::fontset[i];
-    }
-
-    rom.read(reinterpret_cast<char *>(memory.data() +
-                                      hardware::memory_program_start),
-             rom_size);
-
     // 64x32
     std::vector<std::vector<bool>> display(
         hardware::display_width,
         std::vector<bool>(hardware::display_height, 0));
     // original chip8 has 16 two-byte entries
-    std::vector<std::uint16_t> stack(2, 0);
+    std::vector<std::uint16_t> stack(hardware::max_stack_entries, 0);
     // 16 general registers
     std::vector<std::uint8_t> registers(hardware::max_registers, 0);
     std::uint16_t stack_pointer{0};
@@ -72,6 +63,14 @@ int main(int argc, char *argv[]) {
     std::uint8_t delay_timer{0};
     // like delay timer, beeps if it's not 0
     std::uint8_t sound_timer{0};
+
+    for (int i = 0; i < hardware::font_capacity; ++i) {
+      memory[i] = hardware::fontset[i];
+    }
+
+    rom.read(reinterpret_cast<char *>(memory.data() +
+                                      hardware::memory_program_start),
+             rom_size);
 
     // since the keypad is hexadecimal there has to be a qwerty equivalent
     std::map<int, sf::Keyboard::Key> keyboard_map{
@@ -88,26 +87,20 @@ int main(int argc, char *argv[]) {
         sf::VideoMode(hardware::display_width * hardware::pixel_size,
                       hardware::display_height * hardware::pixel_size),
         "chip8");
-    // window.setFramerateLimit(fps);
+
     sf::RectangleShape pixel(
         sf::Vector2f(hardware::pixel_size, hardware::pixel_size));
 
-    sf::SoundBuffer buffer;
+    sf::SoundBuffer buffer{};
     if (!buffer.loadFromFile("beep.ogg"))
       throw std::runtime_error("Failed to load the beep sound.");
 
-    sf::Sound sound;
+    sf::Sound sound{};
     sound.setBuffer(buffer);
 
-    Opcode opcode{};
-    // only 2 instructions (draw and clear) do anything with the display, so
-    // there's no need to update the display every cycle
-
-    bool draw_flag{false};
-
     sf::Clock clock;
-    const double frameTime = 1.0 / static_cast<double>(fps);
-    double accumulator = 0.0;
+    const double frame_time{1.0 / fps};
+    double accumulator{0.0};
 
     while (window.isOpen()) {
       sf::Event event;
@@ -116,12 +109,29 @@ int main(int argc, char *argv[]) {
           window.close();
       }
 
+      Opcode opcode{};
+
+      // only 2 instructions (draw and clear) do anything with the display, so
+      // there's no need to update the display every cycle
+      bool draw_flag{false};
+
+      // clock.restart() restarts the clock but also returns the time elapsed
       double delta_time{clock.restart().asSeconds()};
       accumulator += delta_time;
       int total_instructions{0};
 
-      while (accumulator >= frameTime &&
+      while (accumulator >= frame_time &&
              total_instructions < hardware::max_instructions_per_frame) {
+
+        // Why allow_draw? - https://youtu.be/_h5lBdQVJLg
+        // "Very late to this particular video (was looking for something
+        // unrelated), but display wait is not quite as complicated as it
+        // sounds. The most rudimentary form of it that you can implement, is to
+        // ensure that DXYN will only be allowed to run when it's the first
+        // instruction of a frame, meaning that in any other instance, the
+        // instruction loop will just spin in place, not doing any work. Timers
+        // still decrement as normal of course, you're never meant to pause
+        // those."
         bool allow_draw{true};
         int instructions_this_frame{0};
 
@@ -472,7 +482,7 @@ int main(int argc, char *argv[]) {
           sound.play();
         }
 
-        accumulator -= frameTime;
+        accumulator -= frame_time;
       }
 
       if (draw_flag) {
